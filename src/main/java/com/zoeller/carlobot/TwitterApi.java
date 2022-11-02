@@ -1,26 +1,24 @@
 package com.zoeller.carlobot;
 
-import com.zoeller.carlobot.Configuration;
-
-import org.apache.http.HttpResponse;
-import org.apache.http.Header;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.Header;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.message.BasicNameValuePair;
 
 public class TwitterApi {
 
     private Configuration config = new Configuration();
-    private HttpClient client = new DefaultHttpClient();
+    private CloseableHttpClient client = HttpClientBuilder.create().build();
 
     public TwitterApi() {
     }
