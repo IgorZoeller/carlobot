@@ -7,15 +7,35 @@ import org.apache.http.HttpResponse;
 
 public final class App {
 
-    public static TwitterApi apiInstance = new TwitterApi();
+    public static Configuration cfg = new Configuration();
+    public static TwitterApi apiInstance = new TwitterApi(cfg);
 
     private App() {
         
     }
 
-    public void checkLatestLikedTweetsFromId(String id) {
+    public List<HashMap<String, Object>> checkLatestLikedTweetsFromUserId(String id) {
         HttpResponse response = apiInstance.getLikedTweetsFromUserId(id);
         List<HashMap<String, Object>> likedTweets = HttpHandler.consumeHttpResponse(response);
+        // Debug
+        // System.out.println("before:");
+        // likedTweets.forEach(like -> {
+        //     System.out.println("\n");
+        //     like.entrySet().forEach(entry -> {
+        //         System.out.println(entry.getKey() + " : " + entry.getValue());
+        //     });
+        // });
+        String latestSessionTweetId = cfg.getLastTweetId();
+        System.out.println(
+            String.format("[INFO] The last tweet ID from latest session is: %s", latestSessionTweetId)
+        );
+        int latestSessionIndex = 0;
+        for (HashMap<String, Object> like : likedTweets) {
+            if (String.valueOf(like.get("id")).equals(latestSessionTweetId)) { break; }
+            latestSessionIndex++;
+        }
+        likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
+        return likedTweets;
     }
 
     /**
@@ -23,7 +43,7 @@ public final class App {
      */
     public static void main(String[] args) {
         App bot = new App();
-        String tweetUserId = "2389522849"; // @IgorZoeller
-        bot.checkLatestLikedTweetsFromId(tweetUserId);
+        String tweetUserId = cfg.getUserId();
+        List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
     }
 }

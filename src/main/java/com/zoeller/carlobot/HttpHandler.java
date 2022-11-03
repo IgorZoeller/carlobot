@@ -16,6 +16,14 @@ public final class HttpHandler {
     public HttpHandler() {
     }
 
+    private static void invalidEventStateException(String stateKey, Event event) throws IOException {
+        System.out.println("Object key " + stateKey + ": ");
+        throw new IOException(
+            String.format("[WARN] JSON_PARSER_EXCEPTION - Invalid EVENT state %s, ignoring Object.", event.toString())
+        );
+    }
+
+    
     public static HashMap<String, Object> parseObject(JsonParser parser) throws IOException{
         HashMap<String, Object> content = new HashMap<>();
         String key = null, value = null;
@@ -32,18 +40,23 @@ public final class HttpHandler {
              * In case there is no VALUE_{STRING, NUMBER, NULL, etc.} after KEY_NAME it
              * means the object most likely has a list of values attributed to current key.
              */
+            // TO-DO: ADD LOGIC TO PARSE OBJECT INTO A LIST HERE.
+            // List<Object> values = new ArrayList<Object>();
+            // values = parseJsonMessage(parser);
             else if (event == Event.START_ARRAY) {
                 List<String> values = new ArrayList<String>();
                 while(parser.next() != Event.END_ARRAY) {
-                    values.add(parser.getString());
+                    try {
+                        values.add(parser.getString());
+                    }
+                    catch (IllegalStateException error) {
+                        invalidEventStateException(key, event);
+                    }
                 }
                 content.put(key, values);
             }
             else {
-                System.out.println(key);
-                System.out.print(event + " : ");
-                System.out.println(parser.getString());
-                throw new IOException("JSON_PARSER_EXCEPTION - Unable to parse Json, invalid EVENT state");
+                invalidEventStateException(key, event);
             }
             event = parser.next();
         }
@@ -56,16 +69,26 @@ public final class HttpHandler {
      * @param stream
      * @return
      */
-    public static List<HashMap<String, Object>> parseJsonMessage(InputStream stream) throws IOException{
+    public static List<HashMap<String, Object>> parseJsonMessage(JsonParser parser) {
         List<HashMap<String, Object>> parsedMessage = new ArrayList<>();
-        JsonParser parser = Json.createParser(stream);
         while (parser.next() != Event.START_ARRAY) continue;
         while(parser.hasNext()) {
             Event event = parser.next();
             if (event == Event.START_OBJECT) {
-                parsedMessage.add(parseObject(parser));
+                try {
+                    parsedMessage.add(parseObject(parser));
+                }
+                catch (IOException error) {
+                    System.out.println(error);
+                    while(parser.next() != Event.END_OBJECT) continue;
+                }
             }
         }
+        return parsedMessage;
+    }
+    public static List<HashMap<String, Object>> parseJsonMessage(InputStream stream) throws IOException{
+        JsonParser parser = Json.createParser(stream);
+        List<HashMap<String, Object>> parsedMessage = parseJsonMessage(parser);
         return parsedMessage;
     }
 

@@ -17,10 +17,11 @@ import org.apache.http.message.BasicNameValuePair;
 
 public class TwitterApi {
 
-    private Configuration config = new Configuration();
+    private Configuration config;
     private CloseableHttpClient client = HttpClientBuilder.create().build();
 
-    public TwitterApi() {
+    public TwitterApi(Configuration config) {
+        this.config = config;
     }
 
     private URI buildURIWithRequestParameters(String URL, List<BasicNameValuePair> parameters)

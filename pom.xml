@@ -94,6 +94,10 @@
                     <key>properties.file</key>
                     <value>${project.basedir}/src/main/resources/.properties</value>
                 </systemProperty>
+                <systemProperty>
+                  <key>data.file</key>
+                  <value>${project.basedir}/src/main/resources/.data</value>
+              </systemProperty>
             </systemProperties>
         </configuration>
     </plugin>
