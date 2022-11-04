@@ -9,12 +9,22 @@ public final class Configuration {
 
     private final String PROPERTIES_FILE_NAME = "properties.file";
     private final String DATA_FILE_NAME = "data.file";
+
     private final String consumerKey = "twitter.consumer.key";
     private final String consumerSecret = "twitter.consumer.secret";
     private final String bearerToken = "twitter.auth.bearer.token";
     private final String accessToken = "twitter.auth.access.token";
     private final String accessSecret = "twitter.auth.access.secret";
+
+    private final String clientId = "twitter.auth.client.id";
+    private final String clientSecret = "twitter.auth.client.secret";
+    private final String clientBase64 = "twitter.auth.client.base64";
+
+    private final String OAuth2Token = "twitter.auth.token";
+    private final String OAuth2RefreshToken = "twitter.auth.token.refresh";
+
     private final String userID = "twitter.user.ID";
+
     private final String lastTweetId = "tweet.last_id";
     private String propertiesFile;
     private String dataFile;
@@ -83,11 +93,39 @@ public final class Configuration {
         return System.getProperty(this.accessSecret);
     }
 
+    public String getClientId() {
+        return System.getProperty(this.clientId);
+    }
+
+    public String getClientSecret() {
+        return System.getProperty(this.clientSecret);
+    }
+
+    public String getClientBase64() {
+        return System.getProperty(this.clientBase64);
+    }
+
+    public String getOAuth2Token() {
+        return System.getProperty(this.OAuth2Token);
+    }
+
+    public String getOAuth2RefreshToken() {
+        return System.getProperty(this.OAuth2RefreshToken);
+    }
+
     public String getUserId() {
         return System.getProperty(this.userID);
     }
 
     public String getLastTweetId() {
-        return System.getProperty(lastTweetId);
+        return System.getProperty(this.lastTweetId);
+    }
+
+    public String getDataFilePath() {
+        return this.dataFile;
+    }
+
+    public String getLastTweetIdIdentifier() {
+        return this.lastTweetId;
     }
 }

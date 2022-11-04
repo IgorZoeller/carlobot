@@ -1,5 +1,9 @@
 package com.zoeller.carlobot;
 
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 
@@ -17,14 +21,6 @@ public final class App {
     public List<HashMap<String, Object>> checkLatestLikedTweetsFromUserId(String id) {
         HttpResponse response = apiInstance.getLikedTweetsFromUserId(id);
         List<HashMap<String, Object>> likedTweets = HttpHandler.consumeHttpResponse(response);
-        // Debug
-        // System.out.println("before:");
-        // likedTweets.forEach(like -> {
-        //     System.out.println("\n");
-        //     like.entrySet().forEach(entry -> {
-        //         System.out.println(entry.getKey() + " : " + entry.getValue());
-        //     });
-        // });
         String latestSessionTweetId = cfg.getLastTweetId();
         System.out.println(
             String.format("[INFO] The last tweet ID from latest session is: %s", latestSessionTweetId)
@@ -35,7 +31,37 @@ public final class App {
             latestSessionIndex++;
         }
         likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
+        // Debug
+        likedTweets.forEach(like -> {
+            System.out.println("\n");
+            like.entrySet().forEach(entry -> {
+                System.out.println(entry.getKey() + " : " + entry.getValue());
+            });
+        });
         return likedTweets;
+    }
+
+    public void tweetDailyMessage(List<HashMap<String, Object>> latestLikes) {
+        int numberOfTweets = latestLikes.size();
+        String message = String.format(
+            "Hoje o Carlinhos deu %s likes.", numberOfTweets
+        );
+        System.out.println(message);
+        apiInstance.postTweet(message);
+    }
+
+    public void updateSessionData(List<HashMap<String, Object>> latestLikes) {
+        String dataFile = cfg.getDataFilePath();
+        String latestLikeId = latestLikes.get(0).get("id").toString();
+        try {
+            PrintWriter writer = new PrintWriter(dataFile, StandardCharsets.UTF_8.toString());
+            writer.println(String.format("%s       = %s", cfg.getLastTweetIdIdentifier(), latestLikeId));
+            writer.close();
+        }
+        catch (FileNotFoundException e){
+        }
+        catch (UnsupportedEncodingException e){
+        }
     }
 
     /**
@@ -45,5 +71,7 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
+        bot.tweetDailyMessage(latestLikes);
+        bot.updateSessionData(latestLikes);
     }
 }
