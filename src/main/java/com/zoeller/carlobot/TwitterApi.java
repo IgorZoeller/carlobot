@@ -1,26 +1,14 @@
 package com.zoeller.carlobot;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.stream.Collectors;
-import java.net.URI;
 
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import javax.json.Json;
 import javax.json.JsonObject;
 
@@ -28,6 +16,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -40,156 +30,20 @@ import org.apache.http.message.BasicNameValuePair;
 public class TwitterApi {
 
     private Configuration config;
-    private CloseableHttpClient client = HttpClientBuilder.create().build();
+    private RequestConfig requestConfig = RequestConfig.custom()
+                                            .setCookieSpec(CookieSpecs.STANDARD)
+                                            .build();
+    private CloseableHttpClient client = HttpClientBuilder.create()
+                                            .setDefaultRequestConfig(requestConfig)
+                                            .build();
+    private HttpHandler.OauthHeaderGenerator authenticator;
 
     public TwitterApi(Configuration config) {
         this.config = config;
-    }
-
-    private class TwitterOauthHeaderGenerator {
-        private String consumerKey = config.getConsumerKey();
-        private String consumerSecret = config.getConsumerSecret();
-        private String signatureMethod = "HMAC-SHA1";
-        private String token = config.getAccessToken();
-        private String tokenSecret = config.getAccessSecret();
-        private String version = "1.0";
-
-        private static final String oauth_consumer_key = "oauth_consumer_key";
-        private static final String oauth_token = "oauth_token";
-        private static final String oauth_signature_method = "oauth_signature_method";
-        private static final String oauth_timestamp = "oauth_timestamp";
-        private static final String oauth_nonce = "oauth_nonce";
-        private static final String oauth_version = "oauth_version";
-        private static final String oauth_signature = "oauth_signature";
-        private static final String HMAC_SHA1 = "HmacSHA1";
-
-        /**
-         * Generates oAuth 1.0a header which can be passed as Authorization header
-         * 
-         * @param httpMethod
-         * @param url
-         * @param requestParams
-         * @return
-         */
-        public String generateHeader(String httpMethod, String url, Map<String, String> requestParams) {
-            StringBuilder base = new StringBuilder();
-            String nonce = getNonce();
-            String timestamp = getTimestamp();
-            String baseSignatureString = generateSignatureBaseString(httpMethod, url, requestParams, nonce, timestamp);
-            String signature = encryptUsingHmacSHA1(baseSignatureString);
-            base.append("OAuth ");
-            append(base, oauth_consumer_key, consumerKey);
-            append(base, oauth_token, token);
-            append(base, oauth_signature_method, signatureMethod);
-            append(base, oauth_timestamp, timestamp);
-            append(base, oauth_nonce, nonce);
-            append(base, oauth_version, version);
-            append(base, oauth_signature, signature);
-            base.deleteCharAt(base.length() - 1);
-            System.out.println("[INFO] Generated Header: " + base.toString());
-            return base.toString();
-        }
-
-        /**
-         * Generate base string to generate the oauth_signature
-         * 
-         * @param httpMethod
-         * @param url
-         * @param requestParams
-         * @return
-         */
-        private String generateSignatureBaseString(String httpMethod, String url, Map<String, String> requestParams, String nonce, String timestamp) {
-            Map<String, String> params = new HashMap<>();
-            requestParams.entrySet().forEach(entry -> {
-                put(params, entry.getKey(), entry.getValue());
-            });
-            put(params, oauth_consumer_key, consumerKey);
-            put(params, oauth_nonce, nonce);
-            put(params, oauth_signature_method, signatureMethod);
-            put(params, oauth_timestamp, timestamp);
-            put(params, oauth_token, token);
-            put(params, oauth_version, version);
-            Map<String, String> sortedParams = params.entrySet().stream().sorted(Map.Entry.comparingByKey())
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue, LinkedHashMap::new));
-            StringBuilder base = new StringBuilder();
-            sortedParams.entrySet().forEach(entry -> {
-                base.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
-            });
-            base.deleteCharAt(base.length() - 1);
-            String baseString = httpMethod.toUpperCase() + "&" + encode(url) + "&" + encode(base.toString());
-            return baseString;
-        }
-
-        private String encryptUsingHmacSHA1(String input) {
-            String secret = new StringBuilder().append(encode(consumerSecret)).append("&").append(encode(tokenSecret)).toString();
-            byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
-            SecretKey key = new SecretKeySpec(keyBytes, HMAC_SHA1);
-            Mac mac;
-            try {
-                mac = Mac.getInstance(HMAC_SHA1);
-                mac.init(key);
-            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-                e.printStackTrace();
-                return null;
-            }
-            byte[] signatureBytes = mac.doFinal(input.getBytes(StandardCharsets.UTF_8));
-            return new String(Base64.getEncoder().encode(signatureBytes));
-        }
-
-        /**
-         * Percentage encode String as per RFC 3986, Section 2.1
-         * 
-         * @param value
-         * @return
-         */
-        private String encode(String value) {
-            String encoded = "";
-            try {
-                encoded = URLEncoder.encode(value, "UTF-8");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            String sb = "";
-            char focus;
-            for (int i = 0; i < encoded.length(); i++) {
-                focus = encoded.charAt(i);
-                if (focus == '*') {
-                    sb += "%2A";
-                } else if (focus == '+') {
-                    sb += "%20";
-                } else if (focus == '%' && i + 1 < encoded.length() && encoded.charAt(i + 1) == '7' && encoded.charAt(i + 2) == 'E') {
-                    sb += '~';
-                    i += 2;
-                } else {
-                    sb += focus;
-                }
-            }
-            return sb.toString();
-        }
-
-        private void put(Map<String, String> map, String key, String value) {
-            map.put(encode(key), encode(value));
-        }
-
-        private void append(StringBuilder builder, String key, String value) {
-            builder.append(encode(key)).append("=\"").append(encode(value)).append("\",");
-        }
-
-        private String getNonce() {
-            int leftLimit = 48; // numeral '0'
-            int rightLimit = 122; // letter 'z'
-            int targetStringLength = 10;
-            Random random = new Random();
-
-            String generatedString = random.ints(leftLimit, rightLimit + 1).filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)).limit(targetStringLength)
-                    .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
-            return generatedString;
-
-        }
-
-        private String getTimestamp() {
-            return Math.round((new Date()).getTime() / 1000.0) + "";
-        }
+        this.authenticator = new HttpHandler.OauthHeaderGenerator(
+            this.config.getConsumerKey(), this.config.getConsumerSecret(),
+            this.config.getAccessToken(), this.config.getAccessSecret()
+        );
     }
 
     private URI buildURIWithRequestParameters(String URL, List<BasicNameValuePair> parameters)
@@ -204,6 +58,7 @@ public class TwitterApi {
         HttpGet request = new HttpGet(endpoint);
         request.setHeaders(headers);
         request.setURI(buildURIWithRequestParameters(endpoint, parameters));
+        System.out.println(String.format("[INFO] GET %s", request.getURI().toString()));
         return this.client.execute(request);
     }
 
@@ -211,6 +66,7 @@ public class TwitterApi {
         HttpPost request = new HttpPost(endpoint);
         request.setHeaders(headers);
         request.setURI(buildURIWithRequestParameters(endpoint, parameters));
+        System.out.println(String.format("[INFO] POST %s", request.getURI().toString()));
         return this.client.execute(request);
     }
 
@@ -218,18 +74,18 @@ public class TwitterApi {
         HttpPost request = new HttpPost(endpoint);
         request.setHeaders(headers);
         request.setEntity(entity);
+        System.out.println(String.format("[INFO] POST %s", request.getURI().toString()));
         return this.client.execute(request);
     }
 
     public String requestToken(String callbackURL, String consumerKey) {
         String endpointURL = "https://api.twitter.com/oauth/request_token";
-        TwitterOauthHeaderGenerator generator = new TwitterOauthHeaderGenerator();
         Map<String, String> parametersMap = new HashMap<>();
         List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
         parametersMap.put("oauth_callback", callbackURL);
         parametersMap.put("oauth_consumer_key", consumerKey);
         parameters.add(new BasicNameValuePair("oauth_callback", callbackURL));
-        Header[] headers = {new BasicHeader("Authorization", generator.generateHeader("POST", endpointURL, parametersMap))};
+        Header[] headers = {new BasicHeader("Authorization", authenticator.generateHeader("POST", endpointURL, parametersMap))};
         try {
             HttpResponse response = requestPOST(endpointURL, headers, parameters);
             return IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
@@ -257,12 +113,11 @@ public class TwitterApi {
     }
 
     private Header createHeaderFromParameters(List<BasicNameValuePair> parameters, String httpMethod, String endpointURL) {
-        TwitterOauthHeaderGenerator generator = new TwitterOauthHeaderGenerator();
         Map<String, String> parameterMap = new HashMap<>();
         parameters.forEach(pair -> {
             parameterMap.put(pair.getName(), pair.getValue());
         });
-        return new BasicHeader("authorization", generator.generateHeader(httpMethod, endpointURL, parameterMap));
+        return new BasicHeader("authorization", authenticator.generateHeader(httpMethod, endpointURL, parameterMap));
     }
 
     public HttpResponse getLikedTweetsFromUserId(String id) {
