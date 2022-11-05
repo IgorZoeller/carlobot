@@ -32,12 +32,12 @@ public final class App {
         }
         likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
         // Debug
-        likedTweets.forEach(like -> {
-            System.out.println("\n");
-            like.entrySet().forEach(entry -> {
-                System.out.println(entry.getKey() + " : " + entry.getValue());
-            });
-        });
+        // likedTweets.forEach(like -> {
+        //     System.out.println("\n");
+        //     like.entrySet().forEach(entry -> {
+        //         System.out.println(entry.getKey() + " : " + entry.getValue());
+        //     });
+        // });
         return likedTweets;
     }
 
@@ -46,11 +46,17 @@ public final class App {
         String message = String.format(
             "Hoje o Carlinhos deu %s likes.", numberOfTweets
         );
+        if (numberOfTweets == 0) {
+            message.concat("\nAí eh pegado.");
+        }
         System.out.println(message);
         apiInstance.postTweet(message);
     }
 
-    public void updateSessionData(List<HashMap<String, Object>> latestLikes) {
+    public int updateSessionData(List<HashMap<String, Object>> latestLikes) {
+        if (latestLikes.size() == 0) {
+            return 0;
+        }
         String dataFile = cfg.getDataFilePath();
         String latestLikeId = latestLikes.get(0).get("id").toString();
         try {
@@ -59,9 +65,12 @@ public final class App {
             writer.close();
         }
         catch (FileNotFoundException e){
+            return -1;
         }
         catch (UnsupportedEncodingException e){
+            return -1;
         }
+        return 1;
     }
 
     /**
@@ -71,7 +80,7 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
-        bot.tweetDailyMessage(latestLikes);
-        bot.updateSessionData(latestLikes);
+        // bot.tweetDailyMessage(latestLikes);
+        // bot.updateSessionData(latestLikes);
     }
 }
