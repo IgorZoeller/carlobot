@@ -62,7 +62,10 @@ public final class App {
         try {
             PrintWriter writer = new PrintWriter(dataFile, StandardCharsets.UTF_8.toString());
             writer.println(String.format("%s       = %s", cfg.getLastTweetIdIdentifier(), latestLikeId));
-            writer.close();
+            System.out.println(
+		String.format("[INFO] Successfully Saved current session last tweet id: %s", latesLikeId)
+		);
+	    writer.close();
         }
         catch (FileNotFoundException e){
             return -1;
