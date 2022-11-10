@@ -63,7 +63,7 @@ public final class App {
             PrintWriter writer = new PrintWriter(dataFile, StandardCharsets.UTF_8.toString());
             writer.println(String.format("%s       = %s", cfg.getLastTweetIdIdentifier(), latestLikeId));
             System.out.println(
-		String.format("[INFO] Successfully Saved current session last tweet id: %s", latestLikeId)
+		String.format("[INFO] Successfully saved current session last tweet id: %s", latestLikeId)
 		);
 	    writer.close();
         }

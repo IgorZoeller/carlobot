@@ -15,6 +15,7 @@
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
+    <jnosql.version>0.0.9</jnosql.version>
   </properties>
 
   <!--              DEPENDENCY LIST               -->
@@ -38,14 +39,14 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/javax.json/javax.json-api -->
     <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
-      <version>1.0.4</version>
-    </dependency>
-    <dependency>
       <groupId>javax.json</groupId>
       <artifactId>javax.json-api</artifactId>
       <version>1.1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.json</artifactId>
+      <version>1.0.4</version>
     </dependency>
     <!-- Apache HTTP Components -->
     <dependency>
@@ -57,6 +58,22 @@
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
       <version>4.4.12</version>
+    </dependency>
+    <!-- Redis stuff -->
+    <dependency>
+      <groupId>org.jboss.weld.se</groupId>
+      <artifactId>weld-se-shaded</artifactId>
+      <version>3.0.1.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jnosql.artemis</groupId>
+      <artifactId>artemis-key-value</artifactId>
+      <version>${jnosql.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jnosql.diana</groupId>
+        <artifactId>redis-driver</artifactId>
+        <version>${jnosql.version}</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.json/json -->
     <dependency>
