@@ -30,7 +30,7 @@ public final class Configuration {
     private String dataFile;
 
     public Configuration() {
-        System.out.println("[INFO] Loading config file.");
+        System.out.println("[INFO] Loading configurations.");
         readProperties();
         readData();
     }
@@ -63,6 +63,7 @@ public final class Configuration {
     }
 
     private void readProperties() {
+        System.out.println("[INFO] Reading application properties.");
         this.propertiesFile = System.getProperty(PROPERTIES_FILE_NAME, "src/main/resources/.properties");
         readFile(this.propertiesFile);
     }
