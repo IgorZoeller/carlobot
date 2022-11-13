@@ -83,7 +83,7 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
-        bot.tweetDailyMessage(latestLikes);
-        bot.updateSessionData(latestLikes);
+        // bot.tweetDailyMessage(latestLikes);
+        // bot.updateSessionData(latestLikes);
     }
 }

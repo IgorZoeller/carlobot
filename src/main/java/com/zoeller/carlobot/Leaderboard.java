@@ -15,14 +15,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+
 public class Leaderboard {
 
     /**
      * {
-     * ${author_id} : {
-     * "name" : ${author_name},
-     * "score" : ${score}
-     * }
+     *     "1" : {"name" : "A", "score" : 100},
+     *     "5" : {"name" : "E", "score" :  60}
      * }
      */
     private HashMap<String, HashMap<String, Object>> table;
@@ -31,13 +30,12 @@ public class Leaderboard {
 
     public Leaderboard(String fileName) {
         this.tableSource = fileName;
-        this.leaderboard = null;
+        this.table = new HashMap<String, HashMap<String, Object>>();
     }
 
     public void load() throws IOException, FileNotFoundException {
         File file = new File(tableSource);
         if (!file.isFile()) {
-            this.table = new HashMap<String, HashMap<String, Object>>();
             if (!file.createNewFile()) {
                 throw new IOException("[ERROR] Could not create file at: " + file.getAbsolutePath());
             }
@@ -48,7 +46,13 @@ public class Leaderboard {
         JsonParser parser = Json.createParser(new FileReader(file));
         while (parser.hasNext()) {
             if (parser.next() == Event.KEY_NAME) {
-                this.table.put(parser.getString(), HttpHandler.parseObject(parser));
+                String key = parser.getString();
+                if (parser.next() == Event.START_OBJECT) {
+                    HashMap<String, Object> entryData = HttpHandler.parseObject(parser);
+                    this.table.put(key, entryData);
+                } else {
+                    throw new IOException("[ERROR] Failed to read leaderboard database. Invalid key-value state.");
+                }
             }
         }
     }
@@ -68,8 +72,7 @@ public class Leaderboard {
             record.put("name", entry.get("name"));
         }
 
-        int oldScore = (int)record.get("score");
-        int newScore = oldScore + (int)entry.get("score");
+        String newScore = entry.get("score").toString();
         record.put("score", newScore);
 
         return true;
@@ -81,14 +84,18 @@ public class Leaderboard {
 
     public SortedSet createLeaderboard() {
         try (SeContainer container = SeContainerInitializer.newInstance().initialize()) {
-            leaderboard = container.select(SortedSet.class).get();
+            this.leaderboard = container.select(SortedSet.class).get();
             for(Map.Entry<String, HashMap<String, Object>> row : this.table.entrySet()) {
                 HashMap<String, Object> entryData = row.getValue();
                 String key = entryData.get("name").toString();
                 int score = (int)entryData.get("score");
-                leaderboard.add(key, score);
+                this.leaderboard.add(key, score);
             }
         }
         return leaderboard;
+    }
+
+    public HashMap<String, HashMap<String, Object>> getTable() {
+        return this.table;
     }
 }

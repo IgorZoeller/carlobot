@@ -21,6 +21,33 @@
   <!--              DEPENDENCY LIST               -->
   <dependencies>
     <dependency>
+      <groupId>org.jnosql.artemis</groupId>
+      <artifactId>artemis-key-value</artifactId>
+      <version>${jnosql.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jnosql.diana</groupId>
+        <artifactId>redis-driver</artifactId>
+        <version>${jnosql.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.weld.se</groupId>
+        <artifactId>weld-se-shaded</artifactId>
+        <version>3.0.1.Final</version>
+    </dependency>
+  <!-- https://mvnrepository.com/artifact/javax.json/javax.json-api -->
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.json</artifactId>
+      <version>1.0.4</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.json</groupId>
+      <artifactId>javax.json-api</artifactId>
+      <version>1.1.4</version>
+    </dependency>
+  <!-- Standard stuff -->
+    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <version>${junit.version}</version>
@@ -37,17 +64,6 @@
       <artifactId>commons-io</artifactId>
       <version>2.11.0</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/javax.json/javax.json-api -->
-    <dependency>
-      <groupId>javax.json</groupId>
-      <artifactId>javax.json-api</artifactId>
-      <version>1.1.4</version>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
-      <version>1.0.4</version>
-    </dependency>
     <!-- Apache HTTP Components -->
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
@@ -57,23 +73,7 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpcore</artifactId>
-      <version>4.4.12</version>
-    </dependency>
-    <!-- Redis stuff -->
-    <dependency>
-      <groupId>org.jboss.weld.se</groupId>
-      <artifactId>weld-se-shaded</artifactId>
-      <version>3.0.1.Final</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jnosql.artemis</groupId>
-      <artifactId>artemis-key-value</artifactId>
-      <version>${jnosql.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.jnosql.diana</groupId>
-        <artifactId>redis-driver</artifactId>
-        <version>${jnosql.version}</version>
+      <version>4.4.15</version>
     </dependency>
     <!-- https://mvnrepository.com/artifact/org.json/json -->
     <dependency>
@@ -149,32 +149,6 @@
           </execution>
         </executions>
       </plugin>
-        <!-- <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.4.0</version>
-        <executions>
-            <execution>
-                <phase>package</phase>
-                <goals>
-                    <goal>java</goal>
-                </goals>
-            </execution>
-        </executions>
-        <configuration>
-            <mainClass>com.zoeller.carlobot.App</mainClass>
-            <systemProperties>
-                <systemProperty>
-                    <key>properties.file</key>
-                    <value>${project.basedir}/src/main/resources/.properties</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>data.file</key>
-                  <value>${project.basedir}/src/main/resources/.data</value>
-              </systemProperty>
-            </systemProperties>
-        </configuration>
-      </plugin> -->
     </plugins>
   </build>
   <reporting>
