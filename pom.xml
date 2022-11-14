@@ -16,6 +16,7 @@
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
     <jnosql.version>0.0.9</jnosql.version>
+    <jackson-version>2.13.3</jackson-version>
   </properties>
 
   <!--              DEPENDENCY LIST               -->
@@ -61,26 +62,21 @@
     </dependency>
     <!-- Redis stuff -->
     <dependency>
-      <groupId>org.jboss.weld.se</groupId>
-      <artifactId>weld-se-shaded</artifactId>
-      <version>3.0.1.Final</version>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>4.3.0</version>
+    </dependency>
+    <!---->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson-version}</version>
     </dependency>
     <dependency>
-      <groupId>org.jnosql.artemis</groupId>
-      <artifactId>artemis-key-value</artifactId>
-      <version>${jnosql.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>org.jnosql.diana</groupId>
-        <artifactId>redis-driver</artifactId>
-        <version>${jnosql.version}</version>
-    </dependency>
-    <!-- https://mvnrepository.com/artifact/org.json/json -->
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20160810</version>
-    </dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson-version}</version>
+  </dependency>
     </dependencies>
   <!--              DEPENDENCY LIST               -->
   
@@ -149,32 +145,6 @@
           </execution>
         </executions>
       </plugin>
-        <!-- <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.4.0</version>
-        <executions>
-            <execution>
-                <phase>package</phase>
-                <goals>
-                    <goal>java</goal>
-                </goals>
-            </execution>
-        </executions>
-        <configuration>
-            <mainClass>com.zoeller.carlobot.App</mainClass>
-            <systemProperties>
-                <systemProperty>
-                    <key>properties.file</key>
-                    <value>${project.basedir}/src/main/resources/.properties</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>data.file</key>
-                  <value>${project.basedir}/src/main/resources/.data</value>
-              </systemProperty>
-            </systemProperties>
-        </configuration>
-      </plugin> -->
     </plugins>
   </build>
   <reporting>

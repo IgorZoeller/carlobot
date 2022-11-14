@@ -1,0 +1,5 @@
+
+    CHECK - 1) Write Leaderboard.save() method to save the table Json.
+    2) Create database shell scripts to initialize and close redis server.
+    3) Create javascript to access database and create the Leaderboard post
+    4) Add methods to Leaderboard class to gather all information for the Leaderboard post so that App can tweet it.

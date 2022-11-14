@@ -1,43 +1,57 @@
 package com.zoeller.carlobot;
 
-import org.jnosql.diana.redis.key.SortedSet;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.params.ZAddParams;
 
-import javax.enterprise.inject.se.SeContainer;
-import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+
 
 public class Leaderboard {
 
     /**
      * {
-     * ${author_id} : {
-     * "name" : ${author_name},
-     * "score" : ${score}
-     * }
+     *     "1" : {"name" : "A", "score" : 100},
+     *     "5" : {"name" : "E", "score" :  60}
      * }
      */
     private HashMap<String, HashMap<String, Object>> table;
-    private SortedSet leaderboard;
     private String tableSource;
 
+    private Jedis redisClient;
+    private String redisKey;
+
+    private long numberOfUpdates = 0;
+
     public Leaderboard(String fileName) {
+        String redisKey = "leaderboard";
         this.tableSource = fileName;
-        this.leaderboard = null;
+        this.redisKey = redisKey;
+        this.table = new HashMap<String, HashMap<String, Object>>();
+        this.redisClient = new Jedis("localhost", 6379);
+    }
+    public Leaderboard(String fileName, String redisKey) {
+        this.tableSource = fileName;
+        this.redisKey = redisKey;
+        this.table = new HashMap<String, HashMap<String, Object>>();
+        this.redisClient = new Jedis("localhost", 6379);
     }
 
     public void load() throws IOException, FileNotFoundException {
         File file = new File(tableSource);
         if (!file.isFile()) {
-            this.table = new HashMap<String, HashMap<String, Object>>();
             if (!file.createNewFile()) {
                 throw new IOException("[ERROR] Could not create file at: " + file.getAbsolutePath());
             }
@@ -48,7 +62,13 @@ public class Leaderboard {
         JsonParser parser = Json.createParser(new FileReader(file));
         while (parser.hasNext()) {
             if (parser.next() == Event.KEY_NAME) {
-                this.table.put(parser.getString(), HttpHandler.parseObject(parser));
+                String key = parser.getString();
+                if (parser.next() == Event.START_OBJECT) {
+                    HashMap<String, Object> entryData = HttpHandler.parseObject(parser);
+                    this.table.put(key, entryData);
+                } else {
+                    throw new IOException("[ERROR] Failed to read leaderboard database. Invalid key-value state.");
+                }
             }
         }
     }
@@ -68,27 +88,59 @@ public class Leaderboard {
             record.put("name", entry.get("name"));
         }
 
-        int oldScore = (int)record.get("score");
-        int newScore = oldScore + (int)entry.get("score");
+        String newScore = entry.get("score").toString();
         record.put("score", newScore);
 
         return true;
     }
 
     public void save() {
-
+        save(this.tableSource);
     }
 
-    public SortedSet createLeaderboard() {
-        try (SeContainer container = SeContainerInitializer.newInstance().initialize()) {
-            leaderboard = container.select(SortedSet.class).get();
-            for(Map.Entry<String, HashMap<String, Object>> row : this.table.entrySet()) {
-                HashMap<String, Object> entryData = row.getValue();
-                String key = entryData.get("name").toString();
-                int score = (int)entryData.get("score");
-                leaderboard.add(key, score);
-            }
+    public void save(String fileName) {
+        try {
+            String json = new ObjectMapper().writeValueAsString(this.table);
+            File output = new File(fileName);
+            FileWriter writer = new FileWriter(output);
+            writer.write(json);
+            writer.close();
+        } catch (Exception error) {
+            System.out.println(error);
+            System.out.println("[ERROR] Unable to save data table. Printing table into terminal for manual backup:");
+            System.out.println("{");
+            this.table.entrySet().forEach(tableEntry -> {
+                String authorId = tableEntry.getKey();
+                System.out.print(String.format("%s : ", authorId));
+                String authorName = tableEntry.getValue().get("name").toString();
+                String likes = tableEntry.getValue().get("score").toString();
+                System.out.println(
+                    String.format("{name : %s, score : %s},", authorName, likes)
+                );
+            });
+            System.out.println("}");
         }
-        return leaderboard;
+    }
+
+    public long updateRedisDB() {
+        ZAddParams params = new ZAddParams().ch();
+        this.table.entrySet().forEach(tableEntry -> {
+            String authorId = tableEntry.getKey();
+            int likes = Integer.valueOf(tableEntry.getValue().get("score").toString());
+            numberOfUpdates += redisClient.zadd(redisKey, likes, authorId, params);
+        });
+        return numberOfUpdates;
+    }
+
+    public List<String> retrieveTopEntriesIDs(int stopIndex) {
+        return this.redisClient.zrevrange(redisKey, 0, stopIndex);
+    }
+
+    public HashMap<String, HashMap<String, Object>> getTable() {
+        return this.table;
+    }
+
+    public Jedis getRedisClient() {
+        return this.redisClient;
     }
 }

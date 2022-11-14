@@ -1,0 +1,7 @@
+{
+    "1" : {"name" : "A", "score" : 100},
+    "5" : {"name" : "E", "score" :  60},
+    "3" : {"name" : "C", "score" :  80},
+    "2" : {"name" : "B", "score" :  90},
+    "4" : {"name" : "D", "score" :  70}
+}
