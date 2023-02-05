@@ -82,14 +82,13 @@ public class LeaderboardDAO {
         if (!record.get("name").equals(entry.get("name"))) {
             System.out.println(
                     String.format(
-                            "[INFO] Detected new NAME for entry id %s. Old name is %s, new name is %s. Updating database...",
+                            "[INFO] Detected new NAME for entry id %s. Old name is <%s>, new name is <%s>. Updating database...",
                             key, record.get("name"), entry.get("name")));
             record.put("name", entry.get("name"));
         }
 
         String newScore = entry.get("score").toString();
         record.put("score", newScore);
-<
         return true;
     }
 
