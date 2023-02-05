@@ -7,7 +7,6 @@ import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
@@ -19,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class Leaderboard {
+public class LeaderboardDAO {
 
     /**
      * {
@@ -35,14 +34,14 @@ public class Leaderboard {
 
     private long numberOfUpdates = 0;
 
-    public Leaderboard(String fileName) {
+    public LeaderboardDAO(String fileName) {
         String redisKey = "leaderboard";
         this.tableSource = fileName;
         this.redisKey = redisKey;
         this.table = new HashMap<String, HashMap<String, Object>>();
         this.redisClient = new Jedis("localhost", 6379);
     }
-    public Leaderboard(String fileName, String redisKey) {
+    public LeaderboardDAO(String fileName, String redisKey) {
         this.tableSource = fileName;
         this.redisKey = redisKey;
         this.table = new HashMap<String, HashMap<String, Object>>();
@@ -90,7 +89,7 @@ public class Leaderboard {
 
         String newScore = entry.get("score").toString();
         record.put("score", newScore);
-
+<
         return true;
     }
 

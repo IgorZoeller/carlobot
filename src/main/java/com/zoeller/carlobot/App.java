@@ -80,9 +80,9 @@ public final class App {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        App bot = new App();
-        String tweetUserId = cfg.getUserId();
-        List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
+        // App bot = new App();
+        // String tweetUserId = cfg.getUserId();
+        // List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
         // bot.tweetDailyMessage(latestLikes);
         // bot.updateSessionData(latestLikes);
     }

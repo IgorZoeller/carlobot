@@ -16,7 +16,7 @@ class LeaderboardTest {
     @Test
     void shouldLoadFiveEntriesFromMockTable() {
         int numberOfEntries = 0;
-        Leaderboard mock = new Leaderboard(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
+        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
         try {
             mock.load();
             HashMap<String, HashMap<String, Object>> mockTable = mock.getTable();
@@ -29,7 +29,7 @@ class LeaderboardTest {
     @Test
     void shouldCreateNewFileForDatabase() {
         String filename = System.getProperty("user.dir") + "/src/test/resources/new_database_file.json";
-        Leaderboard mock = new Leaderboard(filename);
+        LeaderboardDAO mock = new LeaderboardDAO(filename);
         try {
             mock.load();
         } catch (Exception e) {}
@@ -42,7 +42,7 @@ class LeaderboardTest {
 
     @Test
     void shouldUpdateTableEntry() {
-        Leaderboard mock = new Leaderboard(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
+        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
         try {
             mock.load();
         } catch (Exception e) {
@@ -66,7 +66,7 @@ class LeaderboardTest {
 
     @Test
     void shouldUpdateEntriesOnDatabase() {
-        Leaderboard mock = new Leaderboard(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
+        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
         try {
             mock.load();
         } catch (Exception e) {
@@ -86,14 +86,14 @@ class LeaderboardTest {
 
     @Test
     void shouldSaveMockTable() {
-        Leaderboard mock = new Leaderboard(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
+        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
         try {
             mock.load();
         } catch (Exception e) {
         }
         String alternateSavePath = new String(System.getProperty("user.dir") + "/src/test/resources/leaderboardSaveTest.json");
         mock.save(alternateSavePath);
-        Leaderboard mock2 = new Leaderboard(alternateSavePath);
+        LeaderboardDAO mock2 = new LeaderboardDAO(alternateSavePath);
         try {
             mock2.load();
         } catch (Exception e) {
