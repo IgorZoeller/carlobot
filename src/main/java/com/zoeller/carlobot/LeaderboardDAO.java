@@ -23,7 +23,7 @@ public class LeaderboardDAO {
 
     private Jedis redisClient;
 
-    public LeaderboardDAO() throws Exception{
+    public LeaderboardDAO() {
         this.redisClient = new Jedis(host, port);
         if(this.redisClient.isConnected()) {
             System.out.println(String.format("[INFO] Connected to Redis DB %s:%s", host, port));
@@ -53,14 +53,14 @@ public class LeaderboardDAO {
         return mapUsername(this.namesTable, id, name);
     }
 
-    public void deleteNamesTableEntry(String schema, String id) throws IllegalArgumentException{
+    public void deleteNamesTableEntry(String schema, String id) throws IllegalArgumentException {
         if(!this.redisClient.type(schema).equalsIgnoreCase("hash")) {
             throw new IllegalArgumentException("[WARN] Attempted to delete on a schema not containing a names table.");
         }
         this.redisClient.hdel(schema, id);
     }
 
-    public HashMap<String,String> getUsernames(String schema) {
+    public HashMap<String, String> getUsernames(String schema) {
         return new HashMap<String, String>(this.redisClient.hgetAll(schema));
     }
 
