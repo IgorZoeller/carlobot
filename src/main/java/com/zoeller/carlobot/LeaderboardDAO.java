@@ -77,7 +77,7 @@ public class LeaderboardDAO {
     }
 
     public void deleteUserScore(String schema, String id) throws IllegalArgumentException {
-        if(!this.redisClient.type(schema).equalsIgnoreCase("sorted")) {
+        if(!this.redisClient.type(schema).equalsIgnoreCase("zset")) {
             throw new IllegalArgumentException(String.format(
                 "[WARN] Attempted to delete on a schema[%s] not containing a scores table.", schema
             ));
@@ -88,6 +88,8 @@ public class LeaderboardDAO {
     public int getScoreFromId(String schema, String id) {
         // Here we need doubleValue() to transform the return Double to the
         // primitive double. (Double is a wrapper class on top of the primitive double.)
-        return (int)this.redisClient.zscore(schema, id).doubleValue();
+        Double score = this.redisClient.zscore(schema, id);
+        score = score == null ? 0 : score;
+        return (int)score.doubleValue();
     }
 }
