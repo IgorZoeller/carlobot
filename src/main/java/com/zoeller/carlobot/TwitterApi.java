@@ -138,7 +138,7 @@ public class TwitterApi {
     @SuppressWarnings("unchecked")
     public List<HashMap<String, Object>> getUserLikedTweets(String id) {
         List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
-        parameters.add(new BasicNameValuePair("max_results", "10"));
+        // parameters.add(new BasicNameValuePair("max_results", "10"));
         parameters.add(new BasicNameValuePair("expansions",   "author_id"));
         parameters.add(new BasicNameValuePair("tweet.fields", "created_at,author_id"));
         parameters.add(new BasicNameValuePair("user.fields",  "id,name,username"));

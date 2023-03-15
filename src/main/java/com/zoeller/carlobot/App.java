@@ -30,7 +30,14 @@ public final class App {
         System.out.println(
             String.format("[INFO] The last tweet ID from latest session is: %s", latestSessionTweetId)
         );
-        return null;
+        int latestSessionIndex = 0;
+        for (HashMap<String, Object> like : likedTweets) {
+            if (String.valueOf(like.get("id")).equals(latestSessionTweetId)) { break; }
+            latestSessionIndex++;
+        }
+        likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
+        System.out.println(String.format("[INFO] API retrieved %s new tweets", likedTweets.size()));
+        return likedTweets;
     }
 
     public void tweetDailyMessage(List<HashMap<String, Object>> latestLikes) {
@@ -75,7 +82,7 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
-        // board.updateDBEntries(latestLikes);
+        board.updateDBEntries(latestLikes);
         // bot.tweetDailyMessage(latestLikes);
         // bot.updateSessionData(latestLikes);
     }
