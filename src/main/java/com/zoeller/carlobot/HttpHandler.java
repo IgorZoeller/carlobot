@@ -23,6 +23,7 @@ import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 
 public final class HttpHandler {
@@ -56,11 +57,13 @@ public final class HttpHandler {
 
     public static List<HashMap<String, Object>> parseJsonArray(JsonParser parser) {
         List<HashMap<String, Object>> jsonArray = new ArrayList<HashMap<String, Object>>();
-        while (parser.next() != Event.END_ARRAY) {
-            if (parser.next() == Event.START_OBJECT) {
+        Event jEvent = parser.next();
+        while (jEvent != Event.END_ARRAY) {
+            if (jEvent == Event.START_OBJECT) {
                 HashMap<String, Object> object = parseJson(parser);
                 jsonArray.add(object);
             }
+            jEvent = parser.next();
         }
         return jsonArray;
     }
@@ -82,31 +85,31 @@ public final class HttpHandler {
                 value = parseJsonArray(parser);
                 json.put(key, value);
             }
+            jEvent = parser.next();
         }
         return json;
     }
     /**
-     * Takes the JSON response from an http request and parses the InputStream
-     * into a List of Hash Maps containing all data provided.
-     * @param response to be consumed
-     * @return List with all response data
+     * Parses the JSON contained in a response from an HTTP request into a HashMap.
+     * @param response of type {@link HttpResponse}
+     * @return responseJson of type HashMap corresponding to the consumed JSON
      */
     public static HashMap<String, Object> consumeHttpResponse(HttpResponse response) {
-        HashMap<String, Object> responseData = null;
+        HashMap<String, Object> responseJson = null;
         try {
             InputStream httpStream = response.getEntity().getContent();
             System.out.println(
                 String.format("[INFO] Ready to start consuming %d bytes of data.", httpStream.available())
             );
-            responseData = parseJsonMessage(httpStream);
+            responseJson = parseJsonMessage(httpStream);
             httpStream.close();
-            return responseData;
+            return responseJson;
         }
         catch (IOException error) {
             System.out.println("Could not consume HttpResponse");
             System.out.println(error);
         }
-        return responseData;
+        return responseJson;
     }
 
     public static class OauthHeaderGenerator {

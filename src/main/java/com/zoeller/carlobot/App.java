@@ -7,8 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-
 public final class App {
 
     public static Configuration cfg = new Configuration();
@@ -20,28 +18,19 @@ public final class App {
     }
 
     public List<HashMap<String, Object>> checkLatestLikedTweetsFromUserId(String id) {
-        HttpResponse response = apiInstance.getLikedTweetsFromUserId(id);
-        List<HashMap<String, Object>> likedTweets = HttpHandler.consumeHttpResponse(response);
+        List<HashMap<String, Object>> likedTweets = apiInstance.getUserLikedTweets(id);
+        // for (HashMap<String, Object> like : likedTweets) {
+        //     System.out.println("----");
+        //     like.entrySet().forEach(entry -> {
+        //         System.out.println(entry.getKey() + " : " + entry.getValue());
+        //     });
+        //     System.out.println("----");
+        // }
         String latestSessionTweetId = cfg.getLastTweetId();
         System.out.println(
             String.format("[INFO] The last tweet ID from latest session is: %s", latestSessionTweetId)
         );
-        int latestSessionIndex = 0;
-        for (HashMap<String, Object> like : likedTweets) {
-            if (String.valueOf(like.get("id")).equals(latestSessionTweetId)) { break; }
-            latestSessionIndex++;
-        }
-        likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
-        // Debug
-        int count = 0;
-        likedTweets.forEach(like -> {
-            System.out.println("\n");
-            like.entrySet().forEach(entry -> {
-                System.out.println(entry.getKey() + " : " + entry.getValue());
-            });
-            System.out.println(String.format("[%s]", count));
-        });
-        return likedTweets;
+        return null;
     }
 
     public void tweetDailyMessage(List<HashMap<String, Object>> latestLikes) {
@@ -86,7 +75,7 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
-        board.updateDBEntries(latestLikes);
+        // board.updateDBEntries(latestLikes);
         // bot.tweetDailyMessage(latestLikes);
         // bot.updateSessionData(latestLikes);
     }
