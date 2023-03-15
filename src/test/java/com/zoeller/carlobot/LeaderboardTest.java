@@ -2,104 +2,67 @@ package com.zoeller.carlobot;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
-import java.util.HashMap;
-
 import org.junit.jupiter.api.Test;
 
-import redis.clients.jedis.Jedis;
+public class LeaderboardTest {
 
-/**
- * Unit test for simple App.
- */
-class LeaderboardTest {
+    private final LeaderboardDAO cache = new LeaderboardDAO();
+
     @Test
-    void shouldLoadFiveEntriesFromMockTable() {
-        int numberOfEntries = 0;
-        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
-        try {
-            mock.load();
-            HashMap<String, HashMap<String, Object>> mockTable = mock.getTable();
-            numberOfEntries = mockTable.size();
-        } catch (Exception e) {
-        }
-        assertEquals((int) 5, numberOfEntries);
+    void shouldCreateNewEntryAtNamesTable() {
+        String id = "1312";
+        String name = "carlo";
+        this.cache.mapUsername(this.cache.namesTableQA, id, name);
+        String dbName = this.cache.getUsernameFromId(this.cache.namesTableQA, id);
+        assertEquals(name, dbName);
+        this.cache.deleteNamesTableEntry(this.cache.namesTableQA, id);
     }
 
     @Test
-    void shouldCreateNewFileForDatabase() {
-        String filename = System.getProperty("user.dir") + "/src/test/resources/new_database_file.json";
-        LeaderboardDAO mock = new LeaderboardDAO(filename);
-        try {
-            mock.load();
-        } catch (Exception e) {}
-        HashMap<String, HashMap<String, Object>> mockTable = mock.getTable();
-        assertEquals(mockTable.isEmpty(), true);
-        File file = new File(filename);
-        assertEquals(file.isFile(), true);
-        assertEquals(file.delete(), true);
+    void shouldUpdateExistingEntryAtNamesTable() {
+        String id = "2221";
+        String name = "carlo";
+        this.cache.mapUsername(this.cache.namesTableQA, id, name);
+        String newName = "marlo";
+        this.cache.mapUsername(this.cache.namesTableQA, id, newName);
+        String dbName = this.cache.getUsernameFromId(this.cache.namesTableQA, id);
+        assertEquals(newName, dbName);
     }
 
     @Test
-    void shouldUpdateTableEntry() {
-        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
-        try {
-            mock.load();
-        } catch (Exception e) {
-        }
-        
-        HashMap<String, Object> newEntry = new HashMap<String, Object>();
-        String newName  = "new";
-        String newScore = "0";
-        newEntry.put("name", newName);
-        newEntry.put("score", newScore);
-
-        mock.update("1", newEntry);
-
-        HashMap<String, HashMap<String, Object>> mockTable = mock.getTable();
-        String tableName  = mockTable.get("1").get("name").toString();
-        String tableScore = mockTable.get("1").get("score").toString();
-
-        assertEquals(newName, tableName);
-        assertEquals(newScore, tableScore);
+    void shouldDeleteNamesTableEntry() {
+        String id = "3332";
+        String name = "ingo";
+        this.cache.mapUsername(this.cache.namesTableQA, id, name);
+        this.cache.deleteNamesTableEntry(this.cache.namesTableQA, id);
+        String dbName = this.cache.getUsernameFromId(this.cache.namesTableQA, id);
+        assertEquals(null, dbName);
     }
 
     @Test
-    void shouldUpdateEntriesOnDatabase() {
-        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
-        try {
-            mock.load();
-        } catch (Exception e) {
-        }
-
-        Jedis redisClient = mock.getRedisClient();
-        redisClient.select(13);
-        long numberOfUpdates = mock.updateRedisDB();
-        assertEquals(5, numberOfUpdates);
-        assertEquals(1, (int)redisClient.dbSize());
-        assertEquals(true, redisClient.exists("leaderboard"));
-        Double rank = redisClient.zscore("leaderboard", "1");
-        assertEquals(100.0, rank);
-        redisClient.flushDB();
-        assertEquals(0, (int)redisClient.dbSize());
+    void shouldCreateNewEntryAtScoresTable() {
+        String id = "4443";
+        this.cache.updateUserScore(this.cache.scoreTableQA, id);
+        int dbScore = this.cache.getScoreFromId(this.cache.scoreTableQA, id);
+        assertEquals(1, dbScore);
+        this.cache.deleteUserScore(this.cache.scoreTableQA, id);
     }
 
     @Test
-    void shouldSaveMockTable() {
-        LeaderboardDAO mock = new LeaderboardDAO(System.getProperty("user.dir") + "/src/test/resources/leaderboardTest.json");
-        try {
-            mock.load();
-        } catch (Exception e) {
-        }
-        String alternateSavePath = new String(System.getProperty("user.dir") + "/src/test/resources/leaderboardSaveTest.json");
-        mock.save(alternateSavePath);
-        LeaderboardDAO mock2 = new LeaderboardDAO(alternateSavePath);
-        try {
-            mock2.load();
-        } catch (Exception e) {
-        }
-        assertEquals(mock.getTable().size(), mock2.getTable().size());
-        File file = new File(alternateSavePath);
-        assertEquals(file.delete(), true);
+    void shouldUpdateExistingEntryAtScoresTable() {
+        String id = "5352";
+        int originalScore = this.cache.getScoreFromId(this.cache.scoreTableQA, id);
+        this.cache.updateUserScore(this.cache.scoreTableQA, id);
+        int dbScore = this.cache.getScoreFromId(this.cache.scoreTableQA, id);
+        assertEquals(originalScore + 1, dbScore);
+    }
+
+    @Test
+    void shouldNotBreakWhenRetrievingEmptyScore() {
+        String id = "6261";
+        boolean passed = false;
+        this.cache.getScoreFromId(this.cache.scoreTableQA, id);
+        passed = true;
+        assertEquals(true, passed);
     }
 }

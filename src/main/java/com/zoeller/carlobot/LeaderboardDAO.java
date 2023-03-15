@@ -1,144 +1,93 @@
 package com.zoeller.carlobot;
 
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.params.ZAddParams;
 
-import javax.json.Json;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParser.Event;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Set;
 
 
+/**
+ * Class responsible to manage Redis DB data.
+ * <p>namesTable - Redis Hash with key being all mapped user IDs and their current twitter name as the value.</p>
+ * <p>scoreTable - Redis Sorted Set with key being all mapped user IDs and their score being the aggregate value of likes</p>
+ */
 public class LeaderboardDAO {
 
-    /**
-     * {
-     *     "1" : {"name" : "A", "score" : 100},
-     *     "5" : {"name" : "E", "score" :  60}
-     * }
-     */
-    private HashMap<String, HashMap<String, Object>> table;
-    private String tableSource;
+    private final String host = "localhost";
+    private final int port = 6379;
+
+    private final String namesTable = "db.usernames";
+    private final String scoreTable = "db.scores";
+    public final String namesTableQA = "qa.usernames";
+    public final String scoreTableQA = "qa.scores";
 
     private Jedis redisClient;
-    private String redisKey;
 
-    private long numberOfUpdates = 0;
-
-    public LeaderboardDAO(String fileName) {
-        String redisKey = "leaderboard";
-        this.tableSource = fileName;
-        this.redisKey = redisKey;
-        this.table = new HashMap<String, HashMap<String, Object>>();
-        this.redisClient = new Jedis("localhost", 6379);
-    }
-    public LeaderboardDAO(String fileName, String redisKey) {
-        this.tableSource = fileName;
-        this.redisKey = redisKey;
-        this.table = new HashMap<String, HashMap<String, Object>>();
-        this.redisClient = new Jedis("localhost", 6379);
+    public LeaderboardDAO() {
+        this.redisClient = new Jedis(host, port);
+        if(this.redisClient.isConnected()) {
+            System.out.println(String.format("[INFO] Connected to Redis DB %s:%s", host, port));
+            System.out.print(this.redisClient.info());
+        }
     }
 
-    public void load() throws IOException, FileNotFoundException {
-        File file = new File(tableSource);
-        if (!file.isFile()) {
-            if (!file.createNewFile()) {
-                throw new IOException("[ERROR] Could not create file at: " + file.getAbsolutePath());
+    public Set<String> getSchemas() {
+        return this.redisClient.keys("*");
+    }
+
+    public boolean mapUsername(String schema, String id, String name) {
+        if(this.redisClient.hexists(schema, id)) {
+            String currentName = this.redisClient.hget(schema, id);
+            if(currentName.equalsIgnoreCase(name)) {
+                return false;
             }
-            throw new FileNotFoundException(
-                    "[INFO] File does not exist. There is no data to load. Created new file at: "
-                            + file.getAbsolutePath());
+            System.out.println(String.format(
+                "[INFO] Change in username for id[%s] - new: %s, old: %s", id, name, currentName
+            ));
         }
-        JsonParser parser = Json.createParser(new FileReader(file));
-        while (parser.hasNext()) {
-            if (parser.next() == Event.KEY_NAME) {
-                String key = parser.getString();
-                if (parser.next() == Event.START_OBJECT) {
-                    HashMap<String, Object> entryData = HttpHandler.parseObject(parser);
-                    this.table.put(key, entryData);
-                } else {
-                    throw new IOException("[ERROR] Failed to read leaderboard database. Invalid key-value state.");
-                }
-            }
-        }
-    }
-
-    public boolean update(String key, HashMap<String, Object> entry) {
-        if (!this.table.containsKey(key)) {
-            this.table.put(key, entry);
-            return false;
-        }
-        HashMap<String, Object> record = this.table.get(key);
-
-        if (!record.get("name").equals(entry.get("name"))) {
-            System.out.println(
-                    String.format(
-                            "[INFO] Detected new NAME for entry id %s. Old name is <%s>, new name is <%s>. Updating database...",
-                            key, record.get("name"), entry.get("name")));
-            record.put("name", entry.get("name"));
-        }
-
-        String newScore = entry.get("score").toString();
-        record.put("score", newScore);
+        this.redisClient.hset(schema, id, name);
         return true;
     }
 
-    public void save() {
-        save(this.tableSource);
+    public boolean mapUsername(String id, String name) {
+        return mapUsername(this.namesTable, id, name);
     }
 
-    public void save(String fileName) {
-        try {
-            String json = new ObjectMapper().writeValueAsString(this.table);
-            File output = new File(fileName);
-            FileWriter writer = new FileWriter(output);
-            writer.write(json);
-            writer.close();
-        } catch (Exception error) {
-            System.out.println(error);
-            System.out.println("[ERROR] Unable to save data table. Printing table into terminal for manual backup:");
-            System.out.println("{");
-            this.table.entrySet().forEach(tableEntry -> {
-                String authorId = tableEntry.getKey();
-                System.out.print(String.format("%s : ", authorId));
-                String authorName = tableEntry.getValue().get("name").toString();
-                String likes = tableEntry.getValue().get("score").toString();
-                System.out.println(
-                    String.format("{name : %s, score : %s},", authorName, likes)
-                );
-            });
-            System.out.println("}");
+    public void deleteNamesTableEntry(String schema, String id) throws IllegalArgumentException {
+        if(!this.redisClient.type(schema).equalsIgnoreCase("hash")) {
+            throw new IllegalArgumentException("[WARN] Attempted to delete on a schema not containing a names table.");
         }
+        this.redisClient.hdel(schema, id);
     }
 
-    public long updateRedisDB() {
-        ZAddParams params = new ZAddParams().ch();
-        this.table.entrySet().forEach(tableEntry -> {
-            String authorId = tableEntry.getKey();
-            int likes = Integer.valueOf(tableEntry.getValue().get("score").toString());
-            numberOfUpdates += redisClient.zadd(redisKey, likes, authorId, params);
-        });
-        return numberOfUpdates;
+    public HashMap<String, String> getUsernames(String schema) {
+        return new HashMap<String, String>(this.redisClient.hgetAll(schema));
     }
 
-    public List<String> retrieveTopEntriesIDs(int stopIndex) {
-        return this.redisClient.zrevrange(redisKey, 0, stopIndex);
+    public String getUsernameFromId(String schema, String id) {
+        return this.redisClient.hget(schema, id);
     }
 
-    public HashMap<String, HashMap<String, Object>> getTable() {
-        return this.table;
+    public void updateUserScore(String schema, String id) {
+        this.redisClient.zincrby(schema, 1, id);
     }
 
-    public Jedis getRedisClient() {
-        return this.redisClient;
+    public void updateUserScore(String id) {
+        updateUserScore(this.scoreTable, id);
+    }
+
+    public void deleteUserScore(String schema, String id) throws IllegalArgumentException {
+        if(!this.redisClient.type(schema).equalsIgnoreCase("sorted")) {
+            throw new IllegalArgumentException(String.format(
+                "[WARN] Attempted to delete on a schema[%s] not containing a scores table.", schema
+            ));
+        }
+        this.redisClient.zrem(schema, id);
+    }
+
+    public int getScoreFromId(String schema, String id) {
+        // Here we need doubleValue() to transform the return Double to the
+        // primitive double. (Double is a wrapper class on top of the primitive double.)
+        return (int)this.redisClient.zscore(schema, id).doubleValue();
     }
 }
