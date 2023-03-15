@@ -96,6 +96,7 @@ public class TwitterApi {
         }
         return null;
     }
+
     public String accessToken() {
         String endpointURL = "https://api.twitter.com/oauth/access_token";
         List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
@@ -120,10 +121,8 @@ public class TwitterApi {
         return new BasicHeader("authorization", authenticator.generateHeader(httpMethod, endpointURL, parameterMap));
     }
 
-    public HttpResponse getLikedTweetsFromUserId(String id) {
+    public HttpResponse requestLikedTweets(String id, List<BasicNameValuePair> parameters) {
         String endpointURL = String.format("https://api.twitter.com/2/users/%s/liked_tweets", id);
-        List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
-        parameters.add(new BasicNameValuePair("tweet.fields", "created_at,author_id"));
         Header[] headers = {createHeaderFromParameters(parameters, "GET", endpointURL)};
         try {
             HttpResponse response = requestGET(endpointURL, headers, parameters);
@@ -134,6 +133,43 @@ public class TwitterApi {
         catch (URISyntaxException e) {
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<HashMap<String, Object>> getUserLikedTweets(String id) {
+        List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
+        // parameters.add(new BasicNameValuePair("max_results", "10"));
+        parameters.add(new BasicNameValuePair("expansions",   "author_id"));
+        parameters.add(new BasicNameValuePair("tweet.fields", "created_at,author_id"));
+        parameters.add(new BasicNameValuePair("user.fields",  "id,name,username"));
+        HttpResponse response = requestLikedTweets(id, parameters);
+        HashMap<String, Object> responseMessage = HttpHandler.consumeHttpResponse(response);
+        HashMap<String, Object> responseExpansionData = (HashMap<String, Object>)responseMessage.get("includes");
+        List<HashMap<String, Object>> likedTweets = enrichTweetData(
+            (List<HashMap<String, Object>>)responseMessage.get("data"), (List<HashMap<String, Object>>)responseExpansionData.get("users")
+        );
+        return likedTweets;
+    }
+
+    /**
+     * Twitter officially hates all its users, thus the data regarding the tweet come
+     * SEPARATED from the data regarding the information on the user who tweeted it.
+     * I'll have to merge the information by myself :D
+     */
+    private static List<HashMap<String, Object>> enrichTweetData(List<HashMap<String, Object>> tweetData, List<HashMap<String, Object>> userData) {
+        List<HashMap<String, Object>> enrichedHashMaps = new ArrayList<>();
+        for (HashMap<String, Object> tweet : tweetData) {
+            String author_id = String.valueOf(tweet.get("author_id"));
+            for (HashMap<String, Object> user : userData) {
+                String author_id2 = String.valueOf(user.get("id"));
+                if (author_id.equals(author_id2)) {
+                    tweet.put("name", user.get("name"));
+                    tweet.put("username", user.get("username"));
+                }
+            }
+            enrichedHashMaps.add(tweet);
+        }
+        return enrichedHashMaps;
     }
 
     public HttpResponse postTweet(String message) {

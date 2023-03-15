@@ -7,20 +7,25 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-
 public final class App {
 
     public static Configuration cfg = new Configuration();
     public static TwitterApi apiInstance = new TwitterApi(cfg);
+    public static Leaderboard board = new Leaderboard();
 
     private App() {
         
     }
 
     public List<HashMap<String, Object>> checkLatestLikedTweetsFromUserId(String id) {
-        HttpResponse response = apiInstance.getLikedTweetsFromUserId(id);
-        List<HashMap<String, Object>> likedTweets = HttpHandler.consumeHttpResponse(response);
+        List<HashMap<String, Object>> likedTweets = apiInstance.getUserLikedTweets(id);
+        // for (HashMap<String, Object> like : likedTweets) {
+        //     System.out.println("----");
+        //     like.entrySet().forEach(entry -> {
+        //         System.out.println(entry.getKey() + " : " + entry.getValue());
+        //     });
+        //     System.out.println("----");
+        // }
         String latestSessionTweetId = cfg.getLastTweetId();
         System.out.println(
             String.format("[INFO] The last tweet ID from latest session is: %s", latestSessionTweetId)
@@ -31,13 +36,7 @@ public final class App {
             latestSessionIndex++;
         }
         likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
-        // Debug
-        // likedTweets.forEach(like -> {
-        //     System.out.println("\n");
-        //     like.entrySet().forEach(entry -> {
-        //         System.out.println(entry.getKey() + " : " + entry.getValue());
-        //     });
-        // });
+        System.out.println(String.format("[INFO] API retrieved %s new tweets", likedTweets.size()));
         return likedTweets;
     }
 
@@ -63,7 +62,7 @@ public final class App {
             PrintWriter writer = new PrintWriter(dataFile, StandardCharsets.UTF_8.toString());
             writer.println(String.format("%s       = %s", cfg.getLastTweetIdIdentifier(), latestLikeId));
             System.out.println(
-		String.format("[INFO] Successfully Saved current session last tweet id: %s", latestLikeId)
+		String.format("[INFO] Successfully saved current session last tweet id: %s", latestLikeId)
 		);
 	    writer.close();
         }
@@ -83,7 +82,8 @@ public final class App {
         App bot = new App();
         String tweetUserId = cfg.getUserId();
         List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
-        bot.tweetDailyMessage(latestLikes);
-        bot.updateSessionData(latestLikes);
+        board.updateDBEntries(latestLikes);
+        // bot.tweetDailyMessage(latestLikes);
+        // bot.updateSessionData(latestLikes);
     }
 }

@@ -23,111 +23,93 @@ import javax.json.Json;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 
 public final class HttpHandler {
     public HttpHandler() {
+
     }
 
-    private static void invalidEventStateException(String stateKey, Event event) throws IOException {
-        System.out.println("Object key " + stateKey + ": ");
-        throw new IOException(
-            String.format("[WARN] JSON_PARSER_EXCEPTION - Invalid EVENT state %s, ignoring Object.", event.toString())
-        );
+    public static HashMap<String, Object> parseJsonMessage(InputStream stream) throws IOException {
+        JsonParser parser = Json.createParser(stream);
+        HashMap<String, Object> parsedMessage = new HashMap<String, Object>();
+        while (parser.hasNext()) {
+            if (parser.next() == Event.KEY_NAME) {
+                String key = parser.getString();
+                parsedMessage.put(key, parseObject(parser));
+            }
+        }
+        parser.close();
+        return parsedMessage;
     }
 
-    
-    public static HashMap<String, Object> parseObject(JsonParser parser) throws IOException{
-        HashMap<String, Object> content = new HashMap<>();
-        String key = null, value = null;
+    public static Object parseObject(JsonParser parser) {
+        Object object = null;
         Event event = parser.next();
-        while (event != Event.END_OBJECT) {
-            if (event == Event.KEY_NAME) {
+        if (event == Event.START_ARRAY) {
+            object = parseJsonArray(parser);
+        } else if (event == Event.START_OBJECT) {
+            object = parseJson(parser);
+        }
+        return object;
+    }
+
+    public static List<HashMap<String, Object>> parseJsonArray(JsonParser parser) {
+        List<HashMap<String, Object>> jsonArray = new ArrayList<HashMap<String, Object>>();
+        Event jEvent = parser.next();
+        while (jEvent != Event.END_ARRAY) {
+            if (jEvent == Event.START_OBJECT) {
+                HashMap<String, Object> object = parseJson(parser);
+                jsonArray.add(object);
+            }
+            jEvent = parser.next();
+        }
+        return jsonArray;
+    }
+
+    public static HashMap<String, Object> parseJson(JsonParser parser) {
+        HashMap<String, Object> json = new HashMap<String, Object>();
+        Event jEvent = parser.next();
+        String key = null;
+        Object value = null;
+        while (jEvent != Event.END_OBJECT) {
+            if (jEvent == Event.KEY_NAME) {
                 key = parser.getString();
             }
-            else if (event.toString().startsWith("VALUE_")) {
+            else if (jEvent.toString().startsWith("VALUE_")) {
                 value = parser.getString();
-                content.put(key, value);
+                json.put(key, value);
             }
-            /*
-             * In case there is no VALUE_{STRING, NUMBER, NULL, etc.} after KEY_NAME it
-             * means the object most likely has a list of values attributed to current key.
-             */
-            // TO-DO: ADD LOGIC TO PARSE OBJECT INTO A LIST HERE.
-            // List<Object> values = new ArrayList<Object>();
-            // values = parseJsonMessage(parser);
-            else if (event == Event.START_ARRAY) {
-                List<String> values = new ArrayList<String>();
-                while(parser.next() != Event.END_ARRAY) {
-                    try {
-                        values.add(parser.getString());
-                    }
-                    catch (IllegalStateException error) {
-                        invalidEventStateException(key, event);
-                    }
-                }
-                content.put(key, values);
+            else if (jEvent == Event.START_ARRAY) {
+                value = parseJsonArray(parser);
+                json.put(key, value);
             }
-            else {
-                invalidEventStateException(key, event);
-            }
-            event = parser.next();
+            jEvent = parser.next();
         }
-        return content;
+        return json;
     }
-    
-    
     /**
-     * {@link}https://javadoc.io/static/javax.json/javax.json-api/1.1.4/javax/json/stream/JsonParser.html
-     * @param stream
-     * @return
+     * Parses the JSON contained in a response from an HTTP request into a HashMap.
+     * @param response of type {@link HttpResponse}
+     * @return responseJson of type HashMap corresponding to the consumed JSON
      */
-    public static List<HashMap<String, Object>> parseJsonMessage(JsonParser parser) {
-        List<HashMap<String, Object>> parsedMessage = new ArrayList<>();
-        while (parser.next() != Event.START_ARRAY && parser.hasNext()) continue;
-        while(parser.hasNext()) {
-            Event event = parser.next();
-            if (event == Event.START_OBJECT) {
-                try {
-                    parsedMessage.add(parseObject(parser));
-                }
-                catch (IOException error) {
-                    System.out.println(error);
-                    while(parser.next() != Event.END_OBJECT) continue;
-                }
-            }
-        }
-        return parsedMessage;
-    }
-    public static List<HashMap<String, Object>> parseJsonMessage(InputStream stream) throws IOException{
-        JsonParser parser = Json.createParser(stream);
-        List<HashMap<String, Object>> parsedMessage = parseJsonMessage(parser);
-        return parsedMessage;
-    }
-
-
-    /**
-     * Takes the JSON response from an http request and parses the InputStream
-     * into a List of Hash Maps containing all data provided.
-     * @param response to be consumed
-     * @return List with all response data
-     */
-    public static List<HashMap<String, Object>> consumeHttpResponse(HttpResponse response) {
-        List<HashMap<String, Object>> responseData = null;
+    public static HashMap<String, Object> consumeHttpResponse(HttpResponse response) {
+        HashMap<String, Object> responseJson = null;
         try {
             InputStream httpStream = response.getEntity().getContent();
             System.out.println(
                 String.format("[INFO] Ready to start consuming %d bytes of data.", httpStream.available())
             );
-            responseData = parseJsonMessage(httpStream);
+            responseJson = parseJsonMessage(httpStream);
             httpStream.close();
-            return responseData;
+            return responseJson;
         }
         catch (IOException error) {
             System.out.println("Could not consume HttpResponse");
             System.out.println(error);
         }
-        return responseData;
+        return responseJson;
     }
 
     public static class OauthHeaderGenerator {
