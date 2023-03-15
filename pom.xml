@@ -15,6 +15,8 @@
     <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <maven-jar-plugin.version>3.3.0</maven-jar-plugin.version>
     <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
+    <jnosql.version>0.0.9</jnosql.version>
+    <jackson-version>2.13.3</jackson-version>
   </properties>
 
   <!--              DEPENDENCY LIST               -->
@@ -38,14 +40,14 @@
     </dependency>
     <!-- https://mvnrepository.com/artifact/javax.json/javax.json-api -->
     <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>javax.json</artifactId>
-      <version>1.0.4</version>
-    </dependency>
-    <dependency>
       <groupId>javax.json</groupId>
       <artifactId>javax.json-api</artifactId>
       <version>1.1.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.json</artifactId>
+      <version>1.0.4</version>
     </dependency>
     <!-- Apache HTTP Components -->
     <dependency>
@@ -58,12 +60,23 @@
       <artifactId>httpcore</artifactId>
       <version>4.4.12</version>
     </dependency>
-    <!-- https://mvnrepository.com/artifact/org.json/json -->
+    <!-- Redis stuff -->
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20160810</version>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>4.3.0</version>
     </dependency>
+    <!---->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson-version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson-version}</version>
+  </dependency>
     </dependencies>
   <!--              DEPENDENCY LIST               -->
   
@@ -132,32 +145,6 @@
           </execution>
         </executions>
       </plugin>
-        <!-- <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.4.0</version>
-        <executions>
-            <execution>
-                <phase>package</phase>
-                <goals>
-                    <goal>java</goal>
-                </goals>
-            </execution>
-        </executions>
-        <configuration>
-            <mainClass>com.zoeller.carlobot.App</mainClass>
-            <systemProperties>
-                <systemProperty>
-                    <key>properties.file</key>
-                    <value>${project.basedir}/src/main/resources/.properties</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>data.file</key>
-                  <value>${project.basedir}/src/main/resources/.data</value>
-              </systemProperty>
-            </systemProperties>
-        </configuration>
-      </plugin> -->
     </plugins>
   </build>
   <reporting>
