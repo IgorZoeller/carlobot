@@ -123,7 +123,10 @@ public class TwitterApi {
     public HttpResponse getLikedTweetsFromUserId(String id) {
         String endpointURL = String.format("https://api.twitter.com/2/users/%s/liked_tweets", id);
         List<BasicNameValuePair> parameters = new ArrayList<BasicNameValuePair>();
+        parameters.add(new BasicNameValuePair("max_results", "10"));
+        parameters.add(new BasicNameValuePair("expansions",   "author_id"));
         parameters.add(new BasicNameValuePair("tweet.fields", "created_at,author_id"));
+        parameters.add(new BasicNameValuePair("user.fields",  "id,name,username"));
         Header[] headers = {createHeaderFromParameters(parameters, "GET", endpointURL)};
         try {
             HttpResponse response = requestGET(endpointURL, headers, parameters);

@@ -13,6 +13,7 @@ public final class App {
 
     public static Configuration cfg = new Configuration();
     public static TwitterApi apiInstance = new TwitterApi(cfg);
+    public static Leaderboard board = new Leaderboard();
 
     private App() {
         
@@ -32,12 +33,14 @@ public final class App {
         }
         likedTweets.subList(latestSessionIndex, likedTweets.size()).clear();
         // Debug
-        // likedTweets.forEach(like -> {
-        //     System.out.println("\n");
-        //     like.entrySet().forEach(entry -> {
-        //         System.out.println(entry.getKey() + " : " + entry.getValue());
-        //     });
-        // });
+        int count = 0;
+        likedTweets.forEach(like -> {
+            System.out.println("\n");
+            like.entrySet().forEach(entry -> {
+                System.out.println(entry.getKey() + " : " + entry.getValue());
+            });
+            System.out.println(String.format("[%s]", count));
+        });
         return likedTweets;
     }
 
@@ -80,9 +83,10 @@ public final class App {
      * @param args The arguments of the program.
      */
     public static void main(String[] args) {
-        // App bot = new App();
-        // String tweetUserId = cfg.getUserId();
-        // List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
+        App bot = new App();
+        String tweetUserId = cfg.getUserId();
+        List<HashMap<String, Object>> latestLikes = bot.checkLatestLikedTweetsFromUserId(tweetUserId);
+        board.updateDBEntries(latestLikes);
         // bot.tweetDailyMessage(latestLikes);
         // bot.updateSessionData(latestLikes);
     }
