@@ -36,15 +36,18 @@ public class LeaderboardDAO {
     }
 
     public boolean mapUsername(String schema, String id, String name) {
+        System.out.println(String.format("[INFO] Persisting author_id[%s] name[%s] to database.", id, name));
+        String currentName = "null";
         if(this.redisClient.hexists(schema, id)) {
-            String currentName = this.redisClient.hget(schema, id);
+            currentName = this.redisClient.hget(schema, id);
             if(currentName.equalsIgnoreCase(name)) {
+                System.out.println("[INFO] User already present on database with the same name.");
                 return false;
             }
-            System.out.println(String.format(
+        }
+        System.out.println(String.format(
                 "[INFO] Change in username for id[%s] - new: %s, old: %s", id, name, currentName
             ));
-        }
         this.redisClient.hset(schema, id, name);
         return true;
     }
